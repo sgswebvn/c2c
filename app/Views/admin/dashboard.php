@@ -80,6 +80,13 @@
             transform: scale(1.05);
         }
 
+        .product-img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
         @media (max-width: 576px) {
             .card-text {
                 font-size: 2rem;
@@ -87,6 +94,11 @@
 
             .table-responsive {
                 font-size: 0.85rem;
+            }
+
+            .product-img {
+                width: 40px;
+                height: 40px;
             }
         }
     </style>
@@ -101,6 +113,8 @@
     $revenueByYear = $adminModel->getRevenueByPeriod('year');
     $topSellers = $adminModel->getSellerComparisons('revenue');
     $violatingSellers = $adminModel->detectViolatingSellers();
+    $topProducts = $adminModel->getTopSellingProducts(10);
+    $topCategories = $adminModel->getTopSellingCategories(5);
     ?>
     <?php include __DIR__ . '/layouts/header.php'; ?>
     <main class="container mt-4">
@@ -154,6 +168,81 @@
                 <canvas id="revenueChart"></canvas>
             </div>
         </div>
+        <!-- Top Selling Products -->
+        <!-- <div class="card mb-4">
+            <div class="card-body p-4">
+                <h5 class="card-title fw-bold">Top 10 sản phẩm bán chạy</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover table-borderless">
+                        <thead>
+                            <tr>
+                                <th>Hình ảnh</th>
+                                <th>Tên sản phẩm</th>
+                                <th>Danh mục</th>
+                                <th>Người bán</th>
+                                <th>Số lượng bán</th>
+                                <th>Doanh thu (VNĐ)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($topProducts)): ?>
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">Không có sản phẩm bán chạy!</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($topProducts as $product): ?>
+                                    <tr>
+                                        <td>
+                                            <img src="<?php echo htmlspecialchars($product['image'] ? ($product['is_partner_paid'] == 1 ? '/Uploads/partners/' . $product['image'] : '/Uploads/' . $product['image']) : '/assets/images/default-product.jpg'); ?>"
+                                                 class="product-img" alt="<?php echo htmlspecialchars($product['title']); ?>">
+                                        </td>
+                                        <td><a href="/products/<?php echo $product['id']; ?>" class="text-decoration-none"><?php echo htmlspecialchars($product['title']); ?></a></td>
+                                        <td><?php echo htmlspecialchars($product['category_name']); ?></td>
+                                        <td><?php echo htmlspecialchars($product['seller_name']); ?></td>
+                                        <td><?php echo number_format($product['total_sold'], 0); ?></td>
+                                        <td><?php echo number_format($product['total_revenue'], 0, ',', '.'); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div> -->
+        <!-- Top Selling Categories -->
+        <div class="card mb-4">
+            <div class="card-body p-4">
+                <h5 class="card-title fw-bold">Top 5 danh mục bán chạy</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover table-borderless">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tên danh mục</th>
+                                <th>Số lượng bán</th>
+                                <th>Doanh thu (VNĐ)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($topCategories)): ?>
+                                <tr>
+                                    <td colspan="4" class="text-center py-4">Không có danh mục bán chạy!</td>
+                                </tr>
+                            <?php else: ?>
+                                <?php foreach ($topCategories as $category): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($category['id']); ?></td>
+                                        <td><?php echo htmlspecialchars($category['category_name']); ?></td>
+                                        <td><?php echo number_format($category['total_sold'], 0); ?></td>
+                                        <td><?php echo number_format($category['total_revenue'], 0, ',', '.'); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
         <!-- Top Sellers -->
         <div class="card mb-4">
             <div class="card-body p-4">
@@ -173,7 +262,7 @@
                         <tbody>
                             <?php if (empty($topSellers)): ?>
                                 <tr>
-                                    <td colspan="5" class="text-center py-4">Không có người bán nào!</td>
+                                    <td colspan="6" class="text-center py-4">Không có người bán nào!</td>
                                 </tr>
                             <?php else: ?>
                                 <?php foreach ($topSellers as $seller): ?>
@@ -193,7 +282,6 @@
             </div>
         </div>
         <!-- Violating Sellers -->
-        <!-- Violating Sellers -->
         <div class="card">
             <div class="card-body p-4">
                 <h5 class="card-title fw-bold">Người bán vi phạm</h5>
@@ -206,7 +294,7 @@
                                 <th>Đánh giá trung bình</th>
                                 <th>Số đơn hủy</th>
                                 <th>Số báo cáo</th>
-                                <th>Tỷ lệ report (%)</th>
+                                <th>Tỷ lệ báo cáo (%)</th>
                             </tr>
                         </thead>
                         <tbody>

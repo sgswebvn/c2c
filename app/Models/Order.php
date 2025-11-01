@@ -113,7 +113,7 @@ class Order
     {
         try {
             $stmt = $this->db->prepare("
-                INSERT INTO order_detail (order_id, fullname, phone, pincode, state, town_city, house_no, road_name, landmark)
+                INSERT INTO order_detail (order_id, fullname, phone, pincode, state, town_city, house_no, road_name)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             return $stmt->execute([
@@ -125,7 +125,6 @@ class Order
                 $details['town_city'],
                 $details['house_no'],
                 $details['road_name'],
-                $details['landmark']
             ]);
         } catch (\PDOException $e) {
             error_log("Error adding order detail: " . $e->getMessage());

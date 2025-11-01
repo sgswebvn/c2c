@@ -90,12 +90,18 @@
             <div class="col-auto">
                 <h2 class="fw-bold text-dark">Quản lý sản phẩm</h2>
             </div>
-            <div class="col-auto ms-auto">
-                <form class="d-flex" action="/admin/products/search" method="GET">
-                    <input class="form-control me-2" type="search" name="keyword" placeholder="Tìm kiếm sản phẩm" value="<?php echo htmlspecialchars($_GET['keyword'] ?? ''); ?>">
-                    <button class="btn btn-outline-primary" type="submit">Tìm</button>
-                </form>
-            </div>
+           <div class="col-auto ms-auto">
+    <form class="d-flex align-items-center gap-2" action="/admin/search-products" method="GET">
+        <input class="form-control me-2" type="search" name="keyword" placeholder="Tìm kiếm sản phẩm" value="<?php echo htmlspecialchars($_GET['keyword'] ?? ''); ?>">
+        <select class="form-select form-select-sm" name="status">
+            <option value="">Tất cả trạng thái</option>
+            <option value="pending" <?php echo ($_GET['status'] ?? '') === 'pending' ? 'selected' : ''; ?>>Đang chờ duyệt</option>
+            <option value="approved" <?php echo ($_GET['status'] ?? '') === 'approved' ? 'selected' : ''; ?>>Đã duyệt</option>
+            <option value="rejected" <?php echo ($_GET['status'] ?? '') === 'rejected' ? 'selected' : ''; ?>>Bị từ chối</option>
+        </select>
+        <button class="btn btn-outline-primary" type="submit">Tìm</button>
+    </form>
+</div>
         </div>
         <?php if ($success = \App\Helpers\Session::get('success')): ?>
             <script>

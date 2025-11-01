@@ -77,7 +77,6 @@ class CheckoutController
             'town_city' => $_POST['town_city'] ?? '',
             'house_no' => $_POST['house_no'] ?? '',
             'road_name' => $_POST['road_name'] ?? '',
-            'landmark' => $_POST['landmark'] ?? ''
         ];
         $paymentMethod = $_POST['payment_method'] ?? '';
 

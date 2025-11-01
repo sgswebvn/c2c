@@ -23,13 +23,28 @@ class Admin
         return $stats;
     }
 
-    public function searchProducts($keyword)
-    {
-        $keyword = "%$keyword%";
-        $stmt = $this->db->prepare("SELECT * FROM products WHERE title LIKE ? OR description LIKE ?");
-        $stmt->execute([$keyword, $keyword]);
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    public function searchProducts($keyword, $status = '')
+{
+    $params = [];
+    $query = "SELECT * FROM products WHERE 1=1"; // 1=1 để dễ nối điều kiện
+
+    // Lọc theo từ khóa
+    if (!empty($keyword)) {
+        $query .= " AND (title LIKE ? OR description LIKE ?)";
+        $params[] = "%$keyword%";
+        $params[] = "%$keyword%";
     }
+
+    // Lọc theo trạng thái
+    if (!empty($status)) {
+        $query .= " AND status = ?";
+        $params[] = $status;
+    }
+
+    $stmt = $this->db->prepare($query);
+    $stmt->execute($params);
+    return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+}
 
     public function searchUsers($keyword)
     {
@@ -64,6 +79,12 @@ class Admin
     {
         $stmt = $this->db->prepare("UPDATE users SET is_active = ? WHERE id = ?");
         return $stmt->execute([$is_active, $id]);
+    }
+    public function getUserById($id)
+    {
+        $stmt = $this->db->prepare("SELECT * FROM users WHERE id = ?");
+        return $stmt->execute([$id]) ? $stmt->fetch(\PDO::FETCH_ASSOC) : false;
+     
     }
 
     public function getAllReports()
@@ -227,6 +248,72 @@ class Admin
         $stmt->execute();
         $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         error_log("detectViolatingSellers Result: " . print_r($result, true));
+        return $result;
+    }
+   public function getTopSellingProducts($limit = 10)
+    {
+        $query = "SELECT p.id, p.title, p.image, u.is_partner_paid, c.name AS category_name, u.username AS seller_name, 
+                         COALESCE(SUM(o.quantity), 0) AS total_sold, 
+                         COALESCE(SUM(o.quantity * o.total_price), 0) AS total_revenue
+                  FROM products p
+                  LEFT JOIN categories c ON p.category_id = c.id
+                  LEFT JOIN users u ON p.seller_id = u.id
+                  LEFT JOIN orders o ON p.id = o.product_id AND o.status = 'delivered'
+                  WHERE p.status = 'approved'
+                  GROUP BY p.id, p.title, p.image, u.is_partner_paid, c.name, u.username
+                  ORDER BY total_sold DESC, total_revenue DESC
+                  LIMIT :limit";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->execute();
+        $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        error_log("getTopSellingProducts Query: $query, Result: " . print_r($result, true));
+        return $result;
+    }
+
+    public function getTopSellingCategories($limit = 5)
+    {
+        $query = "SELECT c.id, c.name AS category_name, 
+                         COALESCE(SUM(o.quantity), 0) AS total_sold, 
+                         COALESCE(SUM(o.quantity * o.total_price), 0) AS total_revenue
+                  FROM categories c
+                  LEFT JOIN products p ON c.id = p.category_id
+                  LEFT JOIN orders o ON p.id = o.product_id AND o.status = 'delivered'
+                  WHERE p.status = 'approved'
+                  GROUP BY c.id, c.name
+                  ORDER BY total_sold DESC, total_revenue DESC
+                  LIMIT :limit";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->execute();
+        $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        error_log("getTopSellingCategories Query: $query, Result: " . print_r($result, true));
+        return $result;
+    }
+    public function getBestSellingInCategory($categoryId, $currentProductId, $limit = 4)
+    {
+        $query = "SELECT p.id, p.title, p.image, p.price, u.username, u.is_partner_paid, c.name AS category_name, 
+                         COALESCE(SUM(o.quantity), 0) AS total_sold
+                  FROM products p 
+                  LEFT JOIN users u ON p.seller_id = u.id 
+                  LEFT JOIN categories c ON p.category_id = c.id 
+                  LEFT JOIN orders o ON p.id = o.product_id AND o.status = 'delivered'
+                  WHERE p.category_id = :category_id 
+                  AND p.id != :current_product_id 
+                  AND p.status = 'approved'
+                  GROUP BY p.id, p.title, p.image, p.price, u.username, u.is_partner_paid, c.name
+                  ORDER BY total_sold DESC, p.views DESC
+                  LIMIT :limit";
+
+        $stmt = $this->db->prepare($query);
+        $stmt->bindValue(':category_id', $categoryId, \PDO::PARAM_INT);
+        $stmt->bindValue(':current_product_id', $currentProductId, \PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->execute();
+        $result = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        error_log("getBestSellingInCategory Query: $query, Result: " . print_r($result, true));
         return $result;
     }
 }

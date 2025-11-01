@@ -146,13 +146,29 @@
                                                 ?>
                                             </td>
                                             <td><?php echo htmlspecialchars($user['email']); ?></td>
-                                            <td><?php echo $user['is_active'] ? 'Chưa kích hoạt' : 'Kích hoạt'; ?></td>
-                                            <td>
-                                                <a href="/admin/users/<?php echo $user['is_active'] ? 'deactivate' : 'activate'; ?>/<?php echo $user['id']; ?>"
-                                                    class="btn btn-sm btn-<?php echo $user['is_active'] ? 'danger' : 'success'; ?>">
-                                                    <?php echo $user['is_active'] ? 'Kích hoạt' : 'Tạm khóa'; ?>
-                                                </a>
-                                            </td>
+                                                <td>
+    <?php if ($user['role'] !== 'admin'): ?>
+        <?php if ($user['is_active'] === 0): ?>
+            <span class="badge bg-success">Kích hoạt</span>
+        <?php else: ?>
+            <span class="badge bg-danger">Tạm khóa</span>
+        <?php endif; ?>
+    <?php else: ?>
+        <span class="badge bg-danger">Admin</span>
+    <?php endif; ?>
+</td>
+
+<td>
+    <?php if ($user['role'] !== 'admin'): ?>
+        <a href="/admin/users/<?php echo $user['is_active'] === 0 ? 'deactivate' : 'activate'; ?>/<?php echo $user['id']; ?>"
+            class="btn btn-sm btn-<?php echo $user['is_active'] === 0 ? 'danger' : 'success'; ?>">
+            <?php echo $user['is_active'] === 0 ? 'Tạm khóa' : 'Kích hoạt'; ?>
+        </a>
+    <?php else: ?>
+        <span class="text-muted">Không khả dụng</span>
+    <?php endif; ?>
+</td>
+
                                         </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>

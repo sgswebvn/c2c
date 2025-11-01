@@ -9,6 +9,7 @@ use App\Models\Contact;
 use App\Models\Product;
 use App\Models\Report;
 use App\Models\User;
+use App\Helpers\EmailService;
 
 class AdminController
 {
@@ -18,7 +19,8 @@ class AdminController
     private $contactModel;
     private $reportModel;
     private $userModel;
-
+    private $emailService;
+    
     public function __construct()
     {
         $this->adminModel = new Admin();
@@ -30,6 +32,7 @@ class AdminController
         if (!Session::get('user') || Session::get('user')['role'] !== 'admin') {
             $this->redirect('/login');
         }
+        $this->emailService = new EmailService();
     }
 
     private function redirect($url)
@@ -141,6 +144,8 @@ class AdminController
         $topGrowthSellers = $this->adminModel->getSellerComparisons('growth');
         $topRatingSellers = $this->adminModel->getSellerComparisons('ratings');
         $topCancelSellers = $this->adminModel->getSellerComparisons('cancellations');
+        $topProducts = $this->adminModel->getTopSellingProducts(10);
+        $topCategories = $this->adminModel->getTopSellingCategories(5);
         require_once __DIR__ . '/../Views/admin/dashboard.php';
     }
 
@@ -162,12 +167,13 @@ class AdminController
         require_once __DIR__ . '/../Views/admin/products.php';
     }
 
-    public function searchProducts()
-    {
-        $keyword = $_GET['keyword'] ?? '';
-        $products = $this->adminModel->searchProducts($keyword);
-        require_once __DIR__ . '/../Views/admin/products.php';
-    }
+  public function searchProducts()
+{
+    $keyword = $_GET['keyword'] ?? '';
+    $status = $_GET['status'] ?? '';
+    $products = $this->adminModel->searchProducts($keyword, $status);
+    require_once __DIR__ . '/../Views/admin/products.php';
+}
 
     public function updateProductStatus($id, $status)
     {
@@ -206,11 +212,26 @@ class AdminController
         require_once __DIR__ . '/../Views/admin/users.php';
     }
 
-    public function toggleUserStatus($id, $action)
+   public function toggleUserStatus($id, $action)
     {
-        $is_active = $action === 'activate' ? 1 : 0;
+        $is_active = $action === 'activate' ? 0 : 1; // 0: kích hoạt, 1: tạm khóa
         try {
+            // Lấy thông tin người dùng để lấy email và username
+            $user = $this->adminModel->getUserById($id);
+            if (!$user) {
+                Session::set('error', 'Không tìm thấy người dùng!');
+                $this->redirect('/admin/users');
+                return;
+            }
+            
             if ($this->adminModel->toggleUserStatus($id, $is_active)) {
+                // Gửi email thông báo
+                $this->emailService->sendActivationEmail(
+                    $user['email'],
+                    $user['username'],
+                    $is_active === 0 // true nếu kích hoạt, false nếu tạm khóa
+                );
+                
                 Session::set('success', 'Cập nhật trạng thái người dùng thành công!');
             } else {
                 Session::set('error', 'Cập nhật trạng thái thất bại!');
@@ -220,6 +241,7 @@ class AdminController
         }
         $this->redirect('/admin/users');
     }
+    
 
     public function deleteReport($id)
     {
